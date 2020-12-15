@@ -2,15 +2,16 @@
  * @NApiVersion 2.1
  * @NScriptType UserEventScript
  */
-define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget'],
+define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/runtime'],
     /**
      * @param{email} email
      * @param{format} format
      * @param{record} record
      * @param{search} search
      * @param{serverWidget} serverWidget
+     * @param{runtime} runtime
      */
-    (email, format, record, search, serverWidget) => {
+    (email, format, record, search, serverWidget, runtime) => {
 
         /**
          * @description Global variable for storing errors ----> for debugging purposes
@@ -174,7 +175,7 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget'],
                         ],
                     columns:
                         [
-                            search.createColumn({name: "internalid", label: "Internal ID"}),
+                            search.createColumn({name: "internalid", label: "InternalID"}),
                             search.createColumn({
                                 name: "entityid",
                                 sort: search.Sort.ASC,
@@ -204,18 +205,17 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget'],
             beforeLoad(scriptContext) {
                 let newRecord = scriptContext.newRecord;
                 let form = scriptContext.form;
+                form.clientScriptFileId = 203186;
                 if (scriptContext.type == 'create' || scriptContext.type == 'edit' || scriptContext.type == 'view') {
-                    let approverListField = form.addField({
-                        id: 'custpage_approver_list',
-                        type: serverWidget.FieldType.SELECT,
-                        label: 'Approver List'
-                    });
-                    if (scriptContext.type == "edit") {
-                        let billDepartment = newRecord.getValue({
-                            fieldId: 'department'
+                    let submitReason = newRecord.getValue({
+                        fieldId: "custbody_jj_reject_reason_wr_218"
+                    })
+                    if(submitReason && checkForParameter(submitReason)) {
+                        let button = form.addButton({
+                            id: 'custpage_resubmit_button',
+                            functionName: 'resubmitButton',
+                            label: 'Resubmit For Approvals'
                         });
-                        let employeesList = dataSets.activeEmployeeForDepartment(billDepartment);
-                        log.debug("employeesList", employeesList);
                     }
                 }
             },
@@ -241,7 +241,26 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget'],
              * @since 2015.2
              */
             afterSubmit(scriptContext) {
+                let newRecord = scriptContext.newRecord;
+                let form = scriptContext.form;
+                if (scriptContext.type == 'create' || scriptContext.type == 'edit') {
+                    let recipientId = newRecord.getValue({
+                        fieldId: "custbody_jj_approver_list_wr_218"
+                    });
+                    log.debug("recipientId", recipientId);
+                    let userObj = runtime.getCurrentUser();
+                    let runtimeUser = userObj.id;
 
+                    email.send({
+                        author: runtimeUser,
+                        recipients: recipientId,
+                        subject: 'Test Sample Email Module',
+                        body: 'email body',
+                      //  attachments: [fileObj],
+                    });
+
+
+                }
             },
         }
 
