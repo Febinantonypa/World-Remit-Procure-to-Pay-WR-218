@@ -2,7 +2,7 @@
  * @NApiVersion 2.1
  * @NScriptType UserEventScript
  */
-define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/runtime'],
+define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/runtime', 'N/file'],
     /**
      * @param{email} email
      * @param{format} format
@@ -10,8 +10,9 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
      * @param{search} search
      * @param{serverWidget} serverWidget
      * @param{runtime} runtime
+     * @param{file} file
      */
-    (email, format, record, search, serverWidget, runtime) => {
+    (email, format, record, search, serverWidget, runtime, file) => {
 
         /**
          * @description Global variable for storing errors ----> for debugging purposes
@@ -187,6 +188,45 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                 log.debug("employeeSearchObj result count", searchResultCount);
                 return dataSets.iterateSavedSearch(employeeSearchObj, dataSets.fetchSavedSearchColumn(employeeSearchObj, 'label'));
             },
+            vendorBillAttachmentSearch(vendorBillId) {
+                var vendorbillSearchObj = search.create({
+                    type: "vendorbill",
+                    filters:
+                        [
+                            ["type", "anyof", "VendBill"],
+                            "AND",
+                            ["internalid", "anyof", vendorBillId],
+                            "AND",
+                            ["mainline", "is", "T"]
+                        ],
+                    columns:
+                        [
+                            search.createColumn({
+                                name: "internalid",
+                                join: "file",
+                                label: "InternalID"
+                            }),
+                            search.createColumn({
+                                name: "name",
+                                join: "file",
+                                label: "Name"
+                            }),
+                            search.createColumn({
+                                name: "folder",
+                                join: "file",
+                                label: "Folder"
+                            }),
+                            search.createColumn({
+                                name: "documentsize",
+                                join: "file",
+                                label: "SizeinKb"
+                            })
+                        ]
+                });
+                var searchResultCount = vendorbillSearchObj.runPaged().count;
+                log.debug("vendorbillSearchObj result count", searchResultCount);
+                return dataSets.iterateSavedSearch(vendorbillSearchObj, dataSets.fetchSavedSearchColumn(vendorbillSearchObj, 'label'));
+            }
         };
         applyTryCatch(dataSets, "dataSets");
 
@@ -210,13 +250,25 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                     let submitReason = newRecord.getValue({
                         fieldId: "custbody_jj_reject_reason_wr_218"
                     })
-                    if(submitReason && checkForParameter(submitReason)) {
+                    if (submitReason && checkForParameter(submitReason)) {
                         let button = form.addButton({
                             id: 'custpage_resubmit_button',
                             functionName: 'resubmitButton',
                             label: 'Resubmit For Approvals'
                         });
                     }
+                    //ADDING PROGRESS BAR FOR Loading
+                    let progressBarField = form.addField({
+                        id: 'custpage_progress_bar',
+                        type: 'INLINEHTML',
+                        label: 'Progress bar'
+                    });
+
+                    let loadingUrl = "https://4201672-sb1.app.netsuite.com/core/media/media.nl?id=203589&c=4201672_SB1&h=RbZvTJKLaAJ0Mt5hlTdYMDVpLqxMIg3Ba2dq2e5UI4TEAv8t";
+
+                    let htmlCode = "<div><img id='custpage_load_img' style='height:70px;width:100px;top: 400px;left: 800px;float: right;position: absolute; display: none'  src='" + loadingUrl + "'/></div>";
+                    // var htmlCode = "<html><script>alert('sfs')</script></html>"
+                    progressBarField.defaultValue = htmlCode;
                 }
             },
 
@@ -241,25 +293,183 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
              * @since 2015.2
              */
             afterSubmit(scriptContext) {
-                let newRecord = scriptContext.newRecord;
+                let newRecord = record.load({
+                    type: record.Type.VENDOR_BILL,
+                    id: scriptContext.newRecord.id,
+                    isDynamic: true
+                })
                 let form = scriptContext.form;
+                let special_content = '';
                 if (scriptContext.type == 'create' || scriptContext.type == 'edit') {
+                    let emailContentLines = [];
+                    var totalLines = '';
+                    let attachmentsArray = [];
                     let recipientId = newRecord.getValue({
                         fieldId: "custbody_jj_approver_list_wr_218"
                     });
                     log.debug("recipientId", recipientId);
                     let userObj = runtime.getCurrentUser();
                     let runtimeUser = userObj.id;
-
-                    email.send({
-                        author: runtimeUser,
-                        recipients: recipientId,
-                        subject: 'Test Sample Email Module',
-                        body: 'email body',
-                      //  attachments: [fileObj],
+                    let transactionNumber = newRecord.getValue({
+                        fieldId: "transactionnumber"
                     });
+                    let billDate = newRecord.getText({
+                        fieldId: "createddate"
+                    });
+                    if (billDate && checkForParameter(billDate))
+                        billDate = billDate.split(' ')[0];
+                    let supplierName = newRecord.getValue({
+                        fieldId: "entityname"
+                    });
+                    let totalAmount = newRecord.getValue({
+                        fieldId: 'total'
+                    });
+                    let approverName = newRecord.getText({
+                        fieldId: 'custbody_jj_approver_list_wr_218'
+                    });
+                    let currency = newRecord.getText({
+                        fieldId: 'currency'
+                    });
+                    let expenseNumLines = newRecord.getLineCount({
+                        sublistId: 'expense'
+                    });
+                    let itemName;
+                    let memo;
+                    let quantity;
+                    let grossAmount;
+                    for (let i = 0; i < expenseNumLines; i++) {
+                        let objMap = {};
+                        newRecord.selectLine({
+                            sublistId: 'expense',
+                            line: i
+                        });
+                        itemName = newRecord.getCurrentSublistText({
+                            sublistId: 'expense',
+                            fieldId: 'category',
+                        });
+                        memo = newRecord.getCurrentSublistValue({
+                            sublistId: 'expense',
+                            fieldId: 'memo',
+                        });
+                        quantity = '';
+                        grossAmount = newRecord.getCurrentSublistValue({
+                            sublistId: 'expense',
+                            fieldId: 'grossamt',
+                        });
+                        objMap = {
+                            transactionNumber: transactionNumber,
+                            billDate: billDate,
+                            supplierName: supplierName,
+                            approverName: approverName,
+                            currency: currency,
+                            itemName: itemName,
+                            memo: memo,
+                            quantity: quantity,
+                            grossAmount: grossAmount
+                        }
+                        emailContentLines.push(objMap)
+                    }
+                    let itemNumLines = newRecord.getLineCount({
+                        sublistId: 'item'
+                    });
+                    for (let k = 0; k < itemNumLines; k++) {
+                        let objMap = {};
+                        newRecord.selectLine({
+                            sublistId: 'item',
+                            line: k
+                        });
+                        itemName = newRecord.getCurrentSublistText({
+                            sublistId: 'item',
+                            fieldId: 'item',
+                        });
+                        memo = newRecord.getCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'memo',
+                        });
+                        quantity = newRecord.getCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'quantity',
+                        });
+                        grossAmount = newRecord.getCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'grossamt',
+                        });
+                        objMap = {
+                            transactionNumber: transactionNumber,
+                            billDate: billDate,
+                            supplierName: supplierName,
+                            approverName: approverName,
+                            currency: currency,
+                            itemName: itemName,
+                            memo: memo,
+                            quantity: quantity,
+                            grossAmount: grossAmount
+                        }
+                        emailContentLines.push(objMap)
+                    }
+                    log.debug("emailContentLines", emailContentLines);
+
+                    let fileObj = file.load({
+                        id: 203590//sandbox
+                    });
+                    let fileContents = fileObj.getContents();
+                    let line = '<tr>' +
+                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">' +
+                        `<a href="https://4201672-sb1.app.netsuite.com/app/accounting/transactions/vendbill.nl?id=${scriptContext.newRecord.id}&amp;compid=4201672_SB1" target="_blank" data-saferedirecturl="https://4201672-sb1.app.netsuite.com/app/accounting/transactions/vendbill.nl?id%${scriptContext.newRecord.id}%26compid%3D4201672_SB1&amp;source=gmail&amp;ust=1601531407163000&amp;usg=AFQjCNGzFoTGPJnYju2QvR8A-Agd18lWMw">transactionNumber</a>` +
+                        '</td>' +
+                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">billDate</td>' +
+                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">supplierName</td>' +
+                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">approverName</td>' +
+                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">currency</td>' +
+                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">itemName</td>' +
+                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">memo</td>' +
+                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">quantity</td>' +
+                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">grossAmount</td>' +
+                        '</tr>'
 
 
+                    // special_content = fileContents.replace("-enter4-", recordUrl);
+
+                    for (let j = 0; j < emailContentLines.length; j++) {
+                        let linedata = line;
+                        for (let key in emailContentLines[j]) {
+                            linedata = linedata.replace(key, emailContentLines[j][key])
+                        }
+                        totalLines = totalLines + linedata;
+                    }
+                    special_content = fileContents.replace("-enter-", totalLines);
+                    log.debug("special_content", special_content);
+
+                    let fileAttachments = dataSets.vendorBillAttachmentSearch(scriptContext.newRecord.id);
+                    let attachmentSize;
+                    for (let m = 0; m < fileAttachments.length; m++) {
+                        let fileObjects = file.load({
+                            id: fileAttachments[m].InternalID.value
+                        })
+                        attachmentsArray.push(fileObjects);
+                        attachmentSize += fileAttachments[m].SizeinKb.value
+                    }
+                    log.debug("attachmentsArray", attachmentsArray);
+                    if (attachmentSize > 15000) {
+                        let noteLine = `<p style="font-size:14px;color:rgb(255,0,0);text-align:left;line-height:21px;padding-bottom:5px;font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">Note: Attachments cannot be send due to larger size</p>`
+                        special_content = special_content.replace("-enter2-", noteLine);
+                        email.send({
+                            author: runtimeUser,
+                            recipients: recipientId,
+                            subject: 'Vendor Bill Approval Reminder',
+                            body: special_content,
+                        });
+                    } else {
+                        let noteLine = `<p style="font-size:14px;color:rgb(255,0,0);text-align:left;line-height:21px;padding-bottom:5px;font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important"></p>`
+                        special_content = special_content.replace("-enter2-", noteLine);
+                        email.send({
+                            author: runtimeUser,
+                            recipients: recipientId,
+                            subject: 'Vendor Bill Approval Reminder',
+                            body: special_content,
+                            attachments: attachmentsArray,
+                        });
+                    }
                 }
             },
         }

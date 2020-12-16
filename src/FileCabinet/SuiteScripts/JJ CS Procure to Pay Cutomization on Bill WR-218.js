@@ -45,121 +45,6 @@ define(['N/currentRecord', 'N/search', 'N/record'],
             }
         }
 
-        /**
-         * Function to be executed when field is slaved.
-         *
-         * @param {Object} scriptContext
-         * @param {Record} scriptContext.currentRecord - Current form record
-         * @param {string} scriptContext.sublistId - Sublist name
-         * @param {string} scriptContext.fieldId - Field name
-         *
-         * @since 2015.2
-         */
-        function postSourcing(scriptContext) {
-
-        }
-
-        /**
-         * Function to be executed after sublist is inserted, removed, or edited.
-         *
-         * @param {Object} scriptContext
-         * @param {Record} scriptContext.currentRecord - Current form record
-         * @param {string} scriptContext.sublistId - Sublist name
-         *
-         * @since 2015.2
-         */
-        function sublistChanged(scriptContext) {
-
-        }
-
-        /**
-         * Function to be executed after line is selected.
-         *
-         * @param {Object} scriptContext
-         * @param {Record} scriptContext.currentRecord - Current form record
-         * @param {string} scriptContext.sublistId - Sublist name
-         *
-         * @since 2015.2
-         */
-        function lineInit(scriptContext) {
-
-        }
-
-        /**
-         * Validation function to be executed when field is changed.
-         *
-         * @param {Object} scriptContext
-         * @param {Record} scriptContext.currentRecord - Current form record
-         * @param {string} scriptContext.sublistId - Sublist name
-         * @param {string} scriptContext.fieldId - Field name
-         * @param {number} scriptContext.lineNum - Line number. Will be undefined if not a sublist or matrix field
-         * @param {number} scriptContext.columnNum - Line number. Will be undefined if not a matrix field
-         *
-         * @returns {boolean} Return true if field is valid
-         *
-         * @since 2015.2
-         */
-        function validateField(scriptContext) {
-
-        }
-
-        /**
-         * Validation function to be executed when sublist line is committed.
-         *
-         * @param {Object} scriptContext
-         * @param {Record} scriptContext.currentRecord - Current form record
-         * @param {string} scriptContext.sublistId - Sublist name
-         *
-         * @returns {boolean} Return true if sublist line is valid
-         *
-         * @since 2015.2
-         */
-        function validateLine(scriptContext) {
-
-        }
-
-        /**
-         * Validation function to be executed when sublist line is inserted.
-         *
-         * @param {Object} scriptContext
-         * @param {Record} scriptContext.currentRecord - Current form record
-         * @param {string} scriptContext.sublistId - Sublist name
-         *
-         * @returns {boolean} Return true if sublist line is valid
-         *
-         * @since 2015.2
-         */
-        function validateInsert(scriptContext) {
-
-        }
-
-        /**
-         * Validation function to be executed when record is deleted.
-         *
-         * @param {Object} scriptContext
-         * @param {Record} scriptContext.currentRecord - Current form record
-         * @param {string} scriptContext.sublistId - Sublist name
-         *
-         * @returns {boolean} Return true if sublist line is valid
-         *
-         * @since 2015.2
-         */
-        function validateDelete(scriptContext) {
-
-        }
-
-        /**
-         * Validation function to be executed when record is saved.
-         *
-         * @param {Object} scriptContext
-         * @param {Record} scriptContext.currentRecord - Current form record
-         * @returns {boolean} Return true if record is valid
-         *
-         * @since 2015.2
-         */
-        function saveRecord(scriptContext) {
-
-        }
 
         /**
          * @description Check whether the given parameter argument has value on it or is it empty.
@@ -303,16 +188,51 @@ define(['N/currentRecord', 'N/search', 'N/record'],
 
         function resubmitButton() {
             try {
-                var recordId = currentRecord.get().id;
-                record.submitFields({
-                    type: 'vendorbill',
-                    id: recordId,
-                    values: {
-                        'custbody_jj_reject_reason_wr_218': '',
-                        'approvalstatus': 1
-                    }
+                var promise = new Promise(function (resolve, reject) {
+                    jQuery("#custpage_load_img").css("display", "block");
+                    setTimeout(function () {
+                        resolve();
+                    }, 500)
                 });
-                location.reload();
+                promise.then(function () {
+                    var recordId = currentRecord.get().id;
+                    var recordObj = currentRecord.get();
+                    if (recordObj.isDynamic == false) {
+                        record.submitFields({
+                            type: 'vendorbill',
+                            id: recordId,
+                            values: {
+                                'custbody_jj_reject_reason_wr_218': '',
+                                'approvalstatus': 1
+                            }
+                        });
+                        location.reload();
+
+                    } else {
+                        // recordObj.setValue({
+                        //     fieldId: 'custbody_jj_reject_reason_wr_218',
+                        //     value: ''
+                        // });
+                        // recordObj.setValue({
+                        //     fieldId: 'approvalstatus',
+                        //     value: 1
+                        // });
+                        var oldUrl = window.location.href;
+                        record.submitFields({
+                            type: 'vendorbill',
+                            id: recordId,
+                            values: {
+                                'custbody_jj_reject_reason_wr_218': '',
+                                'approvalstatus': 1
+                            }
+                        });
+                        var newUrl = oldUrl.split('&e=T')[0];
+                        window.location.href = newUrl;
+                    }
+                }).catch(function (err) {
+                    console.log('err @ resubmit button', err);
+                    jQuery("#custpage_load_img").css("display", "none");
+                });
             } catch (err) {
                 console.log("Error @ resubmitButton", err);
             }
@@ -321,14 +241,6 @@ define(['N/currentRecord', 'N/search', 'N/record'],
         return {
             pageInit: pageInit,
             fieldChanged: fieldChanged,
-            postSourcing: postSourcing,
-            sublistChanged: sublistChanged,
-            lineInit: lineInit,
-            validateField: validateField,
-            validateLine: validateLine,
-            validateInsert: validateInsert,
-            validateDelete: validateDelete,
-            saveRecord: saveRecord,
             resubmitButton: resubmitButton
         };
 

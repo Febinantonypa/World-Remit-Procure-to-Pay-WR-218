@@ -22,7 +22,7 @@ define(['N/format', 'N/https', 'N/record', 'N/ui/serverWidget', 'N/redirect'],
             if (scriptContext.request.method == 'GET') {
                 try {
                     let form = serverWidget.createForm({
-                        title: "Intercompany Resource Assignment"
+                        title: "Reject Reason"
                     });
                     let rejectField = form.addField({
                         id: 'custpage_reject_reason',
