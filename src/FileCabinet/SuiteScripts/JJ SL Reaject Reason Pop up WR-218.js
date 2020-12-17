@@ -29,6 +29,7 @@ define(['N/format', 'N/https', 'N/record', 'N/ui/serverWidget', 'N/redirect'],
                         type: serverWidget.FieldType.LONGTEXT,
                         label: 'Reject Reason'
                     });
+                    rejectField.isMandatory = true;
                     form.addSubmitButton({
                         label: 'Submit'
                     });

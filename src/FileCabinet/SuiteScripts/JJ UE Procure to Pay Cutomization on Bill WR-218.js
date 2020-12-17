@@ -298,21 +298,23 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
              * @since 2015.2
              */
             afterSubmit(scriptContext) {
-                let newRecord = record.load({
-                    type: record.Type.VENDOR_BILL,
-                    id: scriptContext.newRecord.id,
-                    isDynamic: true
-                })
                 let form = scriptContext.form;
                 let special_content = '';
-                if (scriptContext.type == 'create' || scriptContext.type == 'edit') {
+                let approvalStatus = scriptContext.newRecord.getValue({
+                    fieldId : "approvalstatus"
+                });
+                if ((scriptContext.type == 'create' || scriptContext.type == 'edit') && runtime.executionContext == runtime.ContextType.USER_INTERFACE && approvalStatus != 2) {
+                    let newRecord = record.load({
+                        type: record.Type.VENDOR_BILL,
+                        id: scriptContext.newRecord.id,
+                        isDynamic: true
+                    })
                     let emailContentLines = [];
                     var totalLines = '';
                     let attachmentsArray = [];
                     let recipientId = newRecord.getValue({
                         fieldId: "custbody_jj_approver_list_wr_218"
                     });
-                    log.debug("recipientId", recipientId);
                     let userObj = runtime.getCurrentUser();
                     let runtimeUser = userObj.id;
                     let transactionNumber = newRecord.getValue({
@@ -443,16 +445,17 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                         totalLines = totalLines + linedata;
                     }
                     special_content = fileContents.replace("-enter-", totalLines);
-                    log.debug("special_content", special_content);
 
                     let fileAttachments = dataSets.vendorBillAttachmentSearch(scriptContext.newRecord.id);
                     let attachmentSize;
                     for (let m = 0; m < fileAttachments.length; m++) {
-                        let fileObjects = file.load({
-                            id: fileAttachments[m].InternalID.value
-                        })
-                        attachmentsArray.push(fileObjects);
-                        attachmentSize += fileAttachments[m].SizeinKb.value
+                        if (fileAttachments[m].InternalID.value && checkForParameter(fileAttachments[m].InternalID.value)) {
+                            let fileObjects = file.load({
+                                id: fileAttachments[m].InternalID.value
+                            })
+                            attachmentsArray.push(fileObjects);
+                            attachmentSize += fileAttachments[m].SizeinKb.value
+                        }
                     }
                     log.debug("attachmentsArray", attachmentsArray);
                     if (attachmentSize > 15000) {
