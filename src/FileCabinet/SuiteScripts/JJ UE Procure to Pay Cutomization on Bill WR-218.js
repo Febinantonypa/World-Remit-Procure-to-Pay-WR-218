@@ -188,6 +188,11 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                 log.debug("employeeSearchObj result count", searchResultCount);
                 return dataSets.iterateSavedSearch(employeeSearchObj, dataSets.fetchSavedSearchColumn(employeeSearchObj, 'label'));
             },
+            /**
+             *
+             * @param vendorBillId Internal Id of the Vendor Bill
+             * @returns {*[]|Object[]} returns the vender bill file attachment details
+             */
             vendorBillAttachmentSearch(vendorBillId) {
                 var vendorbillSearchObj = search.create({
                     type: "vendorbill",

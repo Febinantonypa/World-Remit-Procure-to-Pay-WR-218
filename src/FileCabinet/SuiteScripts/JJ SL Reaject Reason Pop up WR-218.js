@@ -62,6 +62,12 @@ define(['N/format', 'N/https', 'N/record', 'N/ui/serverWidget', 'N/redirect'],
             }
         }
 
+        /**
+         *
+         * @param name
+         * @param url suitelet url
+         * @returns {string|null} to find the specifc parameter from the URL
+         */
         function getParameterByName(name, url) { //Retrieve parameter from URL
             name = name.replace(/[\[\]]/g, "\\$&");
             var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),

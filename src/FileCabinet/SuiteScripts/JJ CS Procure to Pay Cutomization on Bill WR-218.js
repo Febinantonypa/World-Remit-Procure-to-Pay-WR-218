@@ -61,7 +61,11 @@ define(['N/currentRecord', 'N/search', 'N/record'],
                     log.debug('Empty Value found', 'Empty Value for parameter ' + parameterName);
                 return false;
             }
-
+            /**
+             *
+             * @description Saved Search related Object
+             * @type {{fetchSavedSearchColumn: (function(SearchObj, (void|String)): {}), formatSingleSavedSearchResult: (function(Object[], Object<String, SearchObj.columns>): {}), activeEmployeeForDepartment: (function(*): *[]|Object[]), iterateSavedSearch: (function(SearchObj, (void|Object<String, SearchObj.columns>)): (*[]|Object[]))}}
+             */
             const dataSets = {
                 /**
                  * @description Object referencing NetSuite Saved Search
@@ -186,6 +190,9 @@ define(['N/currentRecord', 'N/search', 'N/record'],
 
         }
 
+        /**
+         * @description This is the function definition of the Resubmit Button
+         */
         function resubmitButton() {
             try {
                 var promise = new Promise(function (resolve, reject) {
