@@ -301,9 +301,10 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                 let form = scriptContext.form;
                 let special_content = '';
                 let approvalStatus = scriptContext.newRecord.getValue({
-                    fieldId : "approvalstatus"
+                    fieldId: "approvalstatus"
                 });
-                if ((scriptContext.type == 'create' || scriptContext.type == 'edit') && runtime.executionContext == runtime.ContextType.USER_INTERFACE && approvalStatus != 2) {
+                log.debug("runtime.executionContext", runtime.executionContext)
+                if ((scriptContext.type == 'create' && runtime.executionContext == runtime.ContextType.USER_INTERFACE && approvalStatus == 1) || (scriptContext.type == 'edit' && runtime.executionContext == runtime.ContextType.USEREVENT && approvalStatus == 1)) {
                     let newRecord = record.load({
                         type: record.Type.VENDOR_BILL,
                         id: scriptContext.newRecord.id,
@@ -424,14 +425,14 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                         '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">' +
                         `<a href="https://4201672-sb1.app.netsuite.com/app/accounting/transactions/vendbill.nl?id=${scriptContext.newRecord.id}&amp;compid=4201672_SB1" target="_blank" data-saferedirecturl="https://4201672-sb1.app.netsuite.com/app/accounting/transactions/vendbill.nl?id%${scriptContext.newRecord.id}%26compid%3D4201672_SB1&amp;source=gmail&amp;ust=1601531407163000&amp;usg=AFQjCNGzFoTGPJnYju2QvR8A-Agd18lWMw">transactionNumber</a>` +
                         '</td>' +
-                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">billDate</td>' +
-                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">supplierName</td>' +
-                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">approverName</td>' +
-                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">currency</td>' +
-                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">itemName</td>' +
-                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">memo</td>' +
-                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">quantity</td>' +
-                        '<td style="font-size:14px;color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">grossAmount</td>' +
+                        '<td style="font-size:14px; align:left; color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important;" align = "left">billDate</td>' +
+                        '<td style="font-size:14px; align:left; color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important" align = "left">supplierName</td>' +
+                        '<td style="font-size:14px; align:left; color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important" align = "left">approverName</td>' +
+                        '<td style="font-size:14px; align:left; color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important" align = "left">currency</td>' +
+                        '<td style="font-size:14px; align:left; color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important" align = "left">itemName</td>' +
+                        '<td style="font-size:14px; align:left; color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important" align = "left">memo</td>' +
+                        '<td style="font-size:14px; align:left; color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important" align = "left">quantity</td>' +
+                        '<td style="font-size:14px; align:left; color:rgb(119,119,119);font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important" align = "left">grossAmount</td>' +
                         '</tr>'
 
 
@@ -466,6 +467,9 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                             recipients: recipientId,
                             subject: 'Vendor Bill Approval Reminder',
                             body: special_content,
+                            relatedRecords: {
+                                transactionId: scriptContext.newRecord.id
+                            }
                         });
                     } else {
                         let noteLine = `<p style="font-size:14px;color:rgb(255,0,0);text-align:left;line-height:21px;padding-bottom:5px;font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important"></p>`
@@ -476,6 +480,9 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                             subject: 'Vendor Bill Approval Reminder',
                             body: special_content,
                             attachments: attachmentsArray,
+                            relatedRecords: {
+                                transactionId: scriptContext.newRecord.id
+                            }
                         });
                     }
                 }
