@@ -205,12 +205,18 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
              */
             beforeLoad(scriptContext) {
                 if (scriptContext.type == 'create' || scriptContext.type == 'edit' || scriptContext.type == 'view') {
-                    let form = scriptContext.form;
-                    let button = form.addButton({
-                        id: 'custpage_vendor_bill_button',
-                        functionName: 'vendorBillButton',
-                        label: 'Bill'
-                    });
+                    let proformaStatus = scriptContext.newRecord.getValue({
+                        fieldId: "custrecord_jj_status_wr_218"
+                    })
+                    if (proformaStatus && checkForParameter((proformaStatus) && (proformaStatus == 4) || proformaStatus == 5)) {
+                        let form = scriptContext.form;
+                        form.clientScriptFileId = 204409;
+                        let button = form.addButton({
+                            id: 'custpage_vendor_bill_button',
+                            functionName: 'vendorBillButton',
+                            label: 'Bill'
+                        });
+                    }
                 }
 
             },
@@ -224,7 +230,37 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
              * @since 2015.2
              */
             beforeSubmit(scriptContext) {
-
+                // let newRecordObject = scriptContext.newRecord;
+                // let totalAmount = 0.00;
+                // let itemNumLines = newRecordObject.getLineCount({
+                //     sublistId: 'recmachcustrecord_jj_item_proforma_wr_218'
+                // });
+                // for (let m = 0; m < itemNumLines; m++) {
+                //     let grossAmountforItem = newRecordObject.getSublistValue({
+                //         sublistId: 'recmachcustrecord_jj_item_proforma_wr_218',
+                //         fieldId: 'custrecord_jj_gross_amt_wr_218',
+                //         line: m
+                //     });
+                //     if (grossAmountforItem && checkForParameter(grossAmountforItem))
+                //         totalAmount += grossAmountforItem
+                // }
+                // let expenseNumLines = newRecordObject.getLineCount({
+                //     sublistId: 'recmachcustrecord_jj_expense_proforma_wr_218'
+                // });
+                // for (let n = 0; n < expenseNumLines; n++) {
+                //     let grossAmountforExpense = newRecordObject.getSublistValue({
+                //         sublistId: 'recmachcustrecord_jj_expense_proforma_wr_218',
+                //         fieldId: 'custrecord_jj_expense_gross_amt_wr_218',
+                //         line: n
+                //     });
+                //     if (grossAmountforExpense && checkForParameter(grossAmountforExpense))
+                //         totalAmount += grossAmountforExpense
+                // }
+                // log.debug("totalAmount", totalAmount);
+                // newRecordObject.setValue({
+                //     fieldId: 'custrecord_jj_amount_wr_218',
+                //     value: totalAmount
+                // })
             },
 
             /**
@@ -240,7 +276,6 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                 let approvalStatus = scriptContext.newRecord.getValue({
                     fieldId: "custrecord_jj_status_wr_218"
                 });
-                log.debug("runtime.executionContext", runtime.executionContext)
                 if ((scriptContext.type == 'create' || scriptContext.type == 'edit') && runtime.executionContext == runtime.ContextType.USER_INTERFACE) {
                     let emailContentLines = [];
                     var totalLines = '';
@@ -250,7 +285,6 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                     let poCreator = scriptContext.newRecord.getValue({
                         fieldId: "custrecord_jj_po_creator"
                     });
-                    log.debug("poCreator", poCreator);
                     if (poCreator && checkForParameter(poCreator) && scriptContext.type == 'create') {
                         let newRecord = record.load({
                             type: 'customrecord_jj_proforma_bill_wr_218',
@@ -269,7 +303,6 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                                 attachmentSize += fileAttachments[m].SizeinKb.value
                             }
                         }
-                        log.debug("attachmentsArray", attachmentsArray);
                         if (attachmentSize > 15000) {
                             let noteLine = `<p style="font-size:14px;color:rgb(255,0,0);text-align:left;line-height:21px;padding-bottom:5px;font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">Note: Attachments cannot be send due to larger size</p>`
                             emailContent = emailContent.replace("-enter2-", noteLine);
@@ -309,7 +342,6 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                         let oldPocreator = scriptContext.oldRecord.getValue({
                             fieldId: "custrecord_jj_po_creator"
                         })
-                        log.debug("oldPocreator", oldPocreator);
                         if (oldPocreator !== poCreator) {
                             let newRecord = record.load({
                                 type: 'customrecord_jj_proforma_bill_wr_218',
@@ -328,7 +360,6 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                                     attachmentSize += fileAttachments[m].SizeinKb.value
                                 }
                             }
-                            log.debug("attachmentsArray", attachmentsArray);
                             if (attachmentSize > 15000) {
                                 let noteLine = `<p style="font-size:14px;color:rgb(255,0,0);text-align:left;line-height:21px;padding-bottom:5px;font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">Note: Attachments cannot be send due to larger size</p>`
                                 emailContent = emailContent.replace("-enter2-", noteLine);
@@ -364,6 +395,7 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                             newRecord.save({enableSourcing: false, ignoreMandatoryFields: true});
                         }
                     }
+
                 }
             },
             /**

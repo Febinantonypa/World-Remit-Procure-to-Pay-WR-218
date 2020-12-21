@@ -176,7 +176,6 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
              */
             beforeLoad(scriptContext) {
 
-
             },
 
             /**
@@ -207,8 +206,7 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                     let newProformaVendorBill = newRecord.getValue({
                         fieldId: 'custbody_jj_proforma_bill_po_wr_218'
                     });
-                    log.debug("newProformaVendorBill", newProformaVendorBill);
-                    log.debug("scriptContext.newRecord.type", scriptContext.newRecord.type);
+
                     if (scriptContext.type == 'create' && checkForParameter(newProformaVendorBill)) {
                         if (newRecord.type == "purchaseorder") {
                             record.submitFields({
@@ -220,42 +218,91 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                                 }
                             });
                         } else if (newRecord.type == "vendorbill") {
-                            let fieldLookup = search.lookupFields({
-                                type: 'customrecord_jj_proforma_bill_wr_218',
-                                id: newProformaVendorBill,
-                                columns: ['custrecord_jj_vendor_bill_wr_218']
+                            let objectRecord = record.load({
+                                type: record.Type.VENDOR_BILL,
+                                id: scriptContext.newRecord.id,
+                                isDynamic: true,
+                            })
+                            let purchaseOrders = objectRecord.getLineCount({
+                                sublistId: "purchaseorders"
                             });
-                            let vendorBills = []
-                            for (let k = 0; k < fieldLookup.custrecord_jj_vendor_bill_wr_218.length; k++) {
-                                vendorBills.push(fieldLookup.custrecord_jj_vendor_bill_wr_218[k].value)
-                            }
-                            vendorBills.push(scriptContext.newRecord.id);
-                            record.submitFields({
-                                type: 'customrecord_jj_proforma_bill_wr_218',
-                                id: newProformaVendorBill,
-                                values: {
-                                    'custrecord_jj_status_wr_218': 5,
-                                    'custrecord_jj_vendor_bill_wr_218': vendorBills
+                            if (newProformaVendorBill && checkForParameter(newProformaVendorBill)) {
+                                let fieldLookup = search.lookupFields({
+                                    type: 'customrecord_jj_proforma_bill_wr_218',
+                                    id: newProformaVendorBill,
+                                    columns: ['custrecord_jj_vendor_bill_wr_218']
+                                });
+                                let vendorBills = []
+                                for (let k = 0; k < fieldLookup.custrecord_jj_vendor_bill_wr_218.length; k++) {
+                                    vendorBills.push(fieldLookup.custrecord_jj_vendor_bill_wr_218[k].value)
                                 }
-                            });
+                                vendorBills.push(scriptContext.newRecord.id);
+                                for (let m = 0; m < purchaseOrders; m++) {
+                                    objectRecord.selectLine({
+                                        sublistId: 'purchaseorders',
+                                        line: m
+                                    });
+                                    let purchaseOrderId = objectRecord.getCurrentSublistValue({
+                                        sublistId: "purchaseorders",
+                                        fieldId: "id",
+                                    });
+                                    let fieldlookup = search.lookupFields({
+                                        type: 'purchaseorder',
+                                        id: purchaseOrderId,
+                                        columns: ['status']
+                                    });
+                                    let purchaseOrderStatus = fieldlookup.status[0].value;
+                                    if (purchaseOrderStatus == "fullyBilled") {
+                                        record.submitFields({
+                                            type: "customrecord_jj_proforma_bill_wr_218",
+                                            id: newProformaVendorBill,
+                                            values: {
+                                                'custrecord_jj_status_wr_218': 6,
+                                                'custrecord_jj_vendor_bill_wr_218': vendorBills
+                                            }
+                                        });
+                                    } else {
+                                        record.submitFields({
+                                            type: "customrecord_jj_proforma_bill_wr_218",
+                                            id: newProformaVendorBill,
+                                            values: {
+                                                'custrecord_jj_status_wr_218': 5,
+                                                'custrecord_jj_vendor_bill_wr_218': vendorBills
+                                            }
+                                        });
+                                    }
+                                }
+                            }
                         } else {
                             let fieldLookup = search.lookupFields({
                                 type: 'customrecord_jj_proforma_bill_wr_218',
                                 id: newProformaVendorBill,
-                                columns: ['custrecord_jj_item_reciept_wr_218']
+                                columns: ['custrecord_jj_item_reciept_wr_218', "custrecord_jj_vendor_bill_wr_218"]
                             });
                             let itemReciepts = []
                             for (let k = 0; k < fieldLookup.custrecord_jj_item_reciept_wr_218.length; k++) {
                                 itemReciepts.push(fieldLookup.custrecord_jj_item_reciept_wr_218[k].value)
                             }
                             itemReciepts.push(scriptContext.newRecord.id);
-                            record.submitFields({
-                                type: 'customrecord_jj_proforma_bill_wr_218',
-                                id: newProformaVendorBill,
-                                values: {
+                            let vendorBills = []
+                            for (let r = 0; r < fieldLookup.custrecord_jj_vendor_bill_wr_218.length; r++) {
+                                vendorBills.push(fieldLookup.custrecord_jj_vendor_bill_wr_218[r].value)
+                            }
+                            let recordSubmitValues = {};
+                            if (vendorBills.length == 0) {
+                                recordSubmitValues = {
                                     'custrecord_jj_status_wr_218': 4,
                                     'custrecord_jj_item_reciept_wr_218': itemReciepts
                                 }
+                            } else {
+                                recordSubmitValues = {
+                                    'custrecord_jj_item_reciept_wr_218': itemReciepts
+                                }
+                            }
+                            record.submitFields({
+                                type: 'customrecord_jj_proforma_bill_wr_218',
+                                id: newProformaVendorBill,
+                                values: recordSubmitValues
                             });
                         }
                     } else if (scriptContext.type == 'edit') {
@@ -274,6 +321,14 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                                     }
                                 });
                             } else if (newRecord.type == "vendorbill") {
+                                let objectRecord = record.load({
+                                    type: record.Type.VENDOR_BILL,
+                                    id: scriptContext.newRecord.id,
+                                    isDynamic: true,
+                                })
+                                let purchaseOrders = objectRecord.getLineCount({
+                                    sublistId: "purchaseorders"
+                                });
                                 let fieldLookup = search.lookupFields({
                                     type: 'customrecord_jj_proforma_bill_wr_218',
                                     id: newProformaVendorBill,
@@ -284,32 +339,71 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                                     vendorBills.push(fieldLookup.custrecord_jj_vendor_bill_wr_218[k].value)
                                 }
                                 vendorBills.push(scriptContext.newRecord.id);
-                                record.submitFields({
-                                    type: 'customrecord_jj_proforma_bill_wr_218',
-                                    id: newProformaVendorBill,
-                                    values: {
-                                        'custrecord_jj_status_wr_218': 5,
-                                        'custrecord_jj_vendor_bill_wr_218': vendorBills
+                                for (let m = 0; m < purchaseOrders; m++) {
+                                    objectRecord.selectLine({
+                                        sublistId: 'purchaseorders',
+                                        line: m
+                                    });
+                                    let purchaseOrderId = objectRecord.getCurrentSublistValue({
+                                        sublistId: "purchaseorders",
+                                        fieldId: "id",
+                                    });
+                                    let fieldlookup = search.lookupFields({
+                                        type: 'purchaseorder',
+                                        id: purchaseOrderId,
+                                        columns: ['status']
+                                    });
+                                    let purchaseOrderStatus = fieldlookup.status[0].value;
+                                    if (purchaseOrderStatus == "fullyBilled") {
+                                        record.submitFields({
+                                            type: "customrecord_jj_proforma_bill_wr_218",
+                                            id: newProformaVendorBill,
+                                            values: {
+                                                'custrecord_jj_status_wr_218': 6,
+                                                'custrecord_jj_vendor_bill_wr_218': vendorBills
+                                            }
+                                        });
+                                    } else {
+                                        record.submitFields({
+                                            type: "customrecord_jj_proforma_bill_wr_218",
+                                            id: newProformaVendorBill,
+                                            values: {
+                                                'custrecord_jj_status_wr_218': 5,
+                                                'custrecord_jj_vendor_bill_wr_218': vendorBills
+                                            }
+                                        });
                                     }
-                                });
+                                }
                             } else {
                                 let fieldLookup = search.lookupFields({
                                     type: 'customrecord_jj_proforma_bill_wr_218',
                                     id: newProformaVendorBill,
-                                    columns: ['custrecord_jj_item_reciept_wr_218']
+                                    columns: ['custrecord_jj_item_reciept_wr_218', 'custrecord_jj_vendor_bill_wr_218']
                                 });
                                 let itemReciepts = []
                                 for (let k = 0; k < fieldLookup.custrecord_jj_item_reciept_wr_218.length; k++) {
                                     itemReciepts.push(fieldLookup.custrecord_jj_item_reciept_wr_218[k].value)
                                 }
                                 itemReciepts.push(scriptContext.newRecord.id);
-                                record.submitFields({
-                                    type: 'customrecord_jj_proforma_bill_wr_218',
-                                    id: newProformaVendorBill,
-                                    values: {
+                                let vendorBills = []
+                                for (let r = 0; r < fieldLookup.custrecord_jj_vendor_bill_wr_218.length; r++) {
+                                    vendorBills.push(fieldLookup.custrecord_jj_vendor_bill_wr_218[r].value)
+                                }
+                                let recordSubmitValues = {};
+                                if (vendorBills.length == 0) {
+                                    recordSubmitValues = {
                                         'custrecord_jj_status_wr_218': 4,
                                         'custrecord_jj_item_reciept_wr_218': itemReciepts
                                     }
+                                } else {
+                                    recordSubmitValues = {
+                                        'custrecord_jj_item_reciept_wr_218': itemReciepts
+                                    }
+                                }
+                                record.submitFields({
+                                    type: 'customrecord_jj_proforma_bill_wr_218',
+                                    id: newProformaVendorBill,
+                                    values: recordSubmitValues
                                 });
                             }
                         }
@@ -317,24 +411,46 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                         let oldProformaVendorBill = oldRecord.getValue({
                             fieldId: 'custbody_jj_proforma_bill_po_wr_218'
                         });
-                        log.debug("oldProformaVendorBill", oldProformaVendorBill);
-                        log.debug("oldRecord.type", oldRecord.type);
                         if (checkForParameter(oldProformaVendorBill)) {
                             if (oldRecord.type == "purchaseorder") {
                                 record.submitFields({
                                     type: 'customrecord_jj_proforma_bill_wr_218',
-                                    id: newProformaVendorBill,
+                                    id: oldProformaVendorBill,
                                     values: {
                                         'custrecord_jj_status_wr_218': 2
                                     }
                                 });
+                            } else if (oldRecord.type == "vendorbill") {
+                                if (checkForParameter(oldProformaVendorBill)) {
+                                    let fieldLookup = search.lookupFields({
+                                        type: 'customrecord_jj_proforma_bill_wr_218',
+                                        id: oldProformaVendorBill,
+                                        columns: ['custrecord_jj_vendor_bill_wr_218']
+                                    });
+                                    if (fieldLookup.custrecord_jj_vendor_bill_wr_218.length == 0) {
+                                        record.submitFields({
+                                            type: 'customrecord_jj_proforma_bill_wr_218',
+                                            id: oldProformaVendorBill,
+                                            values: {
+                                                'custrecord_jj_status_wr_218': 4
+                                            }
+                                        });
+                                    } else {
+                                        record.submitFields({
+                                            type: 'customrecord_jj_proforma_bill_wr_218',
+                                            id: oldProformaVendorBill,
+                                            values: {
+                                                'custrecord_jj_status_wr_218': 5
+                                            }
+                                        });
+                                    }
+                                }
                             } else {
                                 let fieldLookup = search.lookupFields({
                                     type: 'customrecord_jj_proforma_bill_wr_218',
                                     id: oldProformaVendorBill,
                                     columns: ['custrecord_jj_item_reciept_wr_218']
                                 });
-                                log.debug("fieldLookup", fieldLookup);
                                 if (fieldLookup.custrecord_jj_item_reciept_wr_218.length == 0) {
                                     record.submitFields({
                                         type: 'customrecord_jj_proforma_bill_wr_218',
@@ -346,6 +462,8 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                                 }
                             }
                         }
+                    } else {
+
                     }
                 }
             },

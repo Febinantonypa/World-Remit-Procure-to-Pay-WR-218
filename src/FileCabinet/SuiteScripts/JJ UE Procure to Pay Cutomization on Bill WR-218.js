@@ -292,7 +292,7 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
             /**
              * Defines the function definition that is executed after record is submitted.
              * @param {Object} scriptContext
-             * @param {Record} scriptContext.newRecord - New record
+             * @param {Record} scriptContext.newRecord - New recordS
              * @param {Record} scriptContext.oldRecord - Old record
              * @param {string} scriptContext.type - Trigger type; use values from the context.UserEventType enum
              * @since 2015.2
@@ -303,7 +303,6 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                 let approvalStatus = scriptContext.newRecord.getValue({
                     fieldId: "approvalstatus"
                 });
-                log.debug("runtime.executionContext", runtime.executionContext)
                 if ((scriptContext.type == 'create' && runtime.executionContext == runtime.ContextType.USER_INTERFACE && approvalStatus == 1) || (scriptContext.type == 'edit' && runtime.executionContext == runtime.ContextType.USEREVENT && approvalStatus == 1)) {
                     let newRecord = record.load({
                         type: record.Type.VENDOR_BILL,
@@ -415,7 +414,6 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                         }
                         emailContentLines.push(objMap)
                     }
-                    log.debug("emailContentLines", emailContentLines);
 
                     let fileObj = file.load({
                         id: 203590//sandbox
@@ -458,32 +456,35 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                             attachmentSize += fileAttachments[m].SizeinKb.value
                         }
                     }
-                    log.debug("attachmentsArray", attachmentsArray);
                     if (attachmentSize > 15000) {
                         let noteLine = `<p style="font-size:14px;color:rgb(255,0,0);text-align:left;line-height:21px;padding-bottom:5px;font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important">Note: Attachments cannot be send due to larger size</p>`
                         special_content = special_content.replace("-enter2-", noteLine);
-                        email.send({
-                            author: runtimeUser,
-                            recipients: recipientId,
-                            subject: 'Vendor Bill Approval Reminder',
-                            body: special_content,
-                            relatedRecords: {
-                                transactionId: scriptContext.newRecord.id
-                            }
-                        });
+                        if (recipientId && checkForParameter(recipientId)) {
+                            email.send({
+                                author: runtimeUser,
+                                recipients: recipientId,
+                                subject: 'Vendor Bill Approval Reminder',
+                                body: special_content,
+                                relatedRecords: {
+                                    transactionId: scriptContext.newRecord.id
+                                }
+                            });
+                        }
                     } else {
                         let noteLine = `<p style="font-size:14px;color:rgb(255,0,0);text-align:left;line-height:21px;padding-bottom:5px;font-family:Oxygen,&quot;Helvetica Neue&quot;,Arial,sans-serif!important"></p>`
                         special_content = special_content.replace("-enter2-", noteLine);
-                        email.send({
-                            author: runtimeUser,
-                            recipients: recipientId,
-                            subject: 'Vendor Bill Approval Reminder',
-                            body: special_content,
-                            attachments: attachmentsArray,
-                            relatedRecords: {
-                                transactionId: scriptContext.newRecord.id
-                            }
-                        });
+                        if (recipientId && checkForParameter(recipientId)) {
+                            email.send({
+                                author: runtimeUser,
+                                recipients: recipientId,
+                                subject: 'Vendor Bill Approval Reminder',
+                                body: special_content,
+                                attachments: attachmentsArray,
+                                relatedRecords: {
+                                    transactionId: scriptContext.newRecord.id
+                                }
+                            });
+                        }
                     }
                 }
             },
