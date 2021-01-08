@@ -231,6 +231,32 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                 var searchResultCount = vendorbillSearchObj.runPaged().count;
                 log.debug("vendorbillSearchObj result count", searchResultCount);
                 return dataSets.iterateSavedSearch(vendorbillSearchObj, dataSets.fetchSavedSearchColumn(vendorbillSearchObj, 'label'));
+            },
+
+            employeeGroupSearch() {
+                var entitygroupSearchObj = search.create({
+                    type: "entitygroup",
+                    filters:
+                        [
+                            ["internalid", "anyof", "33932"]
+                        ],
+                    columns:
+                        [
+                            search.createColumn({
+                                name: "internalid",
+                                join: "groupMember",
+                                label: "InternalID"
+                            }),
+                            search.createColumn({
+                                name: "entityid",
+                                join: "groupMember",
+                                label: "ID"
+                            })
+                        ]
+                });
+                let searchResultCount = entitygroupSearchObj.runPaged().count;
+                log.debug("entitygroupSearchObj result count", searchResultCount);
+                return dataSets.iterateSavedSearch(entitygroupSearchObj, dataSets.fetchSavedSearchColumn(entitygroupSearchObj, 'label'));
             }
         };
         applyTryCatch(dataSets, "dataSets");
@@ -274,6 +300,18 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                     let htmlCode = "<div><img id='custpage_load_img' style='height:70px;width:100px;top: 400px;left: 800px;float: right;position: absolute; display: none'  src='" + loadingUrl + "'/></div>";
                     // var htmlCode = "<html><script>alert('sfs')</script></html>"
                     progressBarField.defaultValue = htmlCode;
+
+                    if(scriptContext.type == 'create' || scriptContext.type == 'edit') {
+                        let fcApproverEmployees = dataSets.employeeGroupSearch();
+                        let employeeIdArray = [];
+                        for(let j = 0 ; j < fcApproverEmployees.length ; j++) {
+                            employeeIdArray.push(fcApproverEmployees[j].InternalID.value);
+                        }
+                        newRecord.setValue({
+                            fieldId: "custbody_wr_237_fc_bill_approver_jj",
+                            value: employeeIdArray
+                        })
+                    }
                 }
             },
 
