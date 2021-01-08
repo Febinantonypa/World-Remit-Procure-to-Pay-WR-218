@@ -187,10 +187,35 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                 var searchResultCount = customrecord_jj_proforma_bill_wr_218SearchObj.runPaged().count;
                 log.debug("customrecord_jj_proforma_bill_wr_218SearchObj result count", searchResultCount);
                 return dataSets.iterateSavedSearch(customrecord_jj_proforma_bill_wr_218SearchObj, dataSets.fetchSavedSearchColumn(customrecord_jj_proforma_bill_wr_218SearchObj, 'label'));
+            },
+            /**
+             * @description the saved search for all the active employees with related department details
+             * @returns {*[]|Object[]}
+             */
+            activeEmployeeSearch() {
+                var employeeSearchObj = search.create({
+                    type: "employee",
+                    filters:
+                        [
+                            ["isinactive", "is", "F"]
+                        ],
+                    columns:
+                        [
+                            search.createColumn({name: "internalid", label: "InternalID"}),
+                            search.createColumn({
+                                name: "entityid",
+                                sort: search.Sort.ASC,
+                                label: "Name"
+                            }),
+                            search.createColumn({name: "departmentnohierarchy", label: "Department"})
+                        ]
+                });
+                var searchResultCount = employeeSearchObj.runPaged().count;
+                log.debug("employeeSearchObj result count", searchResultCount);
+                return dataSets.iterateSavedSearch(employeeSearchObj, dataSets.fetchSavedSearchColumn(employeeSearchObj, 'label'));
             }
         };
         applyTryCatch(dataSets, "dataSets");
-
 
         const exports = {
 
@@ -217,6 +242,35 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                             label: 'Bill'
                         });
                     }
+                    if (scriptContext.type == 'create' || scriptContext.type == 'edit') {
+                        let form = scriptContext.form;
+                        let employeeField = form.addField({
+                            id: 'custpage_wr_237_po_creator',
+                            type: serverWidget.FieldType.SELECT,
+                            label: 'PO Creator'
+                        });
+                        employeeField.setHelpText({
+                            help: "The field stores the employee who will be the purchase order creator."
+                        });
+                        employeeField.isMandatory = true;
+                        let activeEmployees = dataSets.activeEmployeeSearch();
+                        employeeField.addSelectOption({       //add select options to the field
+                            value: '',
+                            text: ''
+                        });
+                        for (let k = 0; k < activeEmployees.length; k++) {
+                            employeeField.addSelectOption({       //add select options to the field
+                                value: activeEmployees[k].InternalID.value,
+                                text: activeEmployees[k].Name.value
+                            });
+                        }
+                        let orginalEmployeeField = form.getField({
+                            id: 'custrecord_jj_po_creator'
+                        });
+                        orginalEmployeeField.updateDisplayType({
+                            displayType: serverWidget.FieldDisplayType.HIDDEN
+                        });
+                    }
                 }
 
             },
@@ -230,37 +284,18 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
              * @since 2015.2
              */
             beforeSubmit(scriptContext) {
-                // let newRecordObject = scriptContext.newRecord;
-                // let totalAmount = 0.00;
-                // let itemNumLines = newRecordObject.getLineCount({
-                //     sublistId: 'recmachcustrecord_jj_item_proforma_wr_218'
-                // });
-                // for (let m = 0; m < itemNumLines; m++) {
-                //     let grossAmountforItem = newRecordObject.getSublistValue({
-                //         sublistId: 'recmachcustrecord_jj_item_proforma_wr_218',
-                //         fieldId: 'custrecord_jj_gross_amt_wr_218',
-                //         line: m
-                //     });
-                //     if (grossAmountforItem && checkForParameter(grossAmountforItem))
-                //         totalAmount += grossAmountforItem
-                // }
-                // let expenseNumLines = newRecordObject.getLineCount({
-                //     sublistId: 'recmachcustrecord_jj_expense_proforma_wr_218'
-                // });
-                // for (let n = 0; n < expenseNumLines; n++) {
-                //     let grossAmountforExpense = newRecordObject.getSublistValue({
-                //         sublistId: 'recmachcustrecord_jj_expense_proforma_wr_218',
-                //         fieldId: 'custrecord_jj_expense_gross_amt_wr_218',
-                //         line: n
-                //     });
-                //     if (grossAmountforExpense && checkForParameter(grossAmountforExpense))
-                //         totalAmount += grossAmountforExpense
-                // }
-                // log.debug("totalAmount", totalAmount);
-                // newRecordObject.setValue({
-                //     fieldId: 'custrecord_jj_amount_wr_218',
-                //     value: totalAmount
-                // })
+                let newRecordObject = scriptContext.newRecord;
+                let virtualPoCreator = newRecordObject.getValue({
+                    fieldId: 'custpage_wr_237_po_creator'
+                });
+                if (checkForParameter(virtualPoCreator)) {
+                    //created custom field value is set to orginal field(hidden)
+                    newRecordObject.setValue({
+                        fieldId: 'custrecord_jj_po_creator',
+                        value: virtualPoCreator,
+                        ignoreFieldChange: true
+                    });
+                }
             },
 
             /**
@@ -538,7 +573,6 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                 return special_content;
             }
         }
-
         applyTryCatch(exports, "exports");
         return exports
 
