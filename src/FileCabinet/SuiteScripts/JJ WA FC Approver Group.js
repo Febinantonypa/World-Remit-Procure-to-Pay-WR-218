@@ -24,20 +24,29 @@ define(['N/https', 'N/record', 'N/search', 'N/url', 'N/redirect', 'N/runtime'],
          */
         const onAction = (scriptContext) => {
             try {
-                let form = scriptContext.form
-                log.debug("form", form);
-                let recId = scriptContext.newRecord.id;
-                log.debug("recId", recId);
-
-                redirect.toSuitelet({
-                    scriptId: 'customscript_jj_sl_reject_reason_pop_up',
-                    deploymentId: 'customdeploy_jj_sl_reject_reason_pop_up',
-                    parameters: {'recId': recId}
+                let id = scriptContext.workflowId;
+                log.debug("id", id);
+                let newRecord = scriptContext.newRecord;
+                let scriptObj = runtime.getCurrentScript();
+                let runtimeUser = scriptObj.id;
+                log.debug("runtimeUser", runtimeUser);
+                let parameterUser = scriptObj.getParameter({
+                    name: 'custscript_jj_wr_237_is_fc_approver'
                 });
+                log.debug("parameterUser", parameterUser);
+                let fcApprovers = newRecord.getValue({
+                    fieldId: "custbody_wr_237_fc_bill_approver_jj"
+                });
+                log.debug("fcApprovers", fcApprovers);
+                log.debug("fcApprovers.indexOf(runtimeUser)", fcApprovers.indexOf(runtimeUser));
+                if(fcApprovers.indexOf(runtimeUser) != -1) {
+                    return 'T';
+                } else {
+                    return 'F';
+                }
             } catch (err) {
-                log.debug("Error @ onAction", err);
+                log.error('ERROR', JSON.stringify(err));
             }
         }
-
         return {onAction};
     });

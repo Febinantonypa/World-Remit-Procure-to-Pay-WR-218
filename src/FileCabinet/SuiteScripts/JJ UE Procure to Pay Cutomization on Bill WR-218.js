@@ -345,22 +345,32 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                 let approvalStatus = scriptContext.newRecord.getValue({
                     fieldId: "approvalstatus"
                 });
+                log.debug("executionContext", runtime.executionContext);
+                log.debug("type", scriptContext.type);
                 if ((scriptContext.type == 'create' && runtime.executionContext == runtime.ContextType.USER_INTERFACE && approvalStatus == 1) || (scriptContext.type == 'edit' && runtime.executionContext == runtime.ContextType.USEREVENT && approvalStatus == 1)) {
                     let newRecord = record.load({
                         type: record.Type.VENDOR_BILL,
                         id: scriptContext.newRecord.id,
                         isDynamic: true
-                    })
+                    });
                     let emailContentLines = [];
                     var totalLines = '';
                     let attachmentsArray = [];
-                    // let recipientId = newRecord.getValue({
-                    //     fieldId: "custbody_jj_approver_list_wr_218"
-                    // });
-                    let recipientId = newRecord.getValue({
-                        fieldId: "custbody_wr_237_fc_bill_approver_jj"
+                    let fcApproved = newRecord.getValue({
+                        fieldId: "custbody_wr_237_fc_approved"
                     });
-                    log.debug("recipientId", recipientId);
+                    let recipientId;
+                    if (fcApproved == true) {
+                        log.debug("fcApproved true", fcApproved);
+                         recipientId = newRecord.getValue({
+                            fieldId: "custbody_jj_approver_list_wr_218"
+                        });
+                    } else {
+                        log.debug("fcApproved false", fcApproved);
+                         recipientId = newRecord.getValue({
+                            fieldId: "custbody_wr_237_fc_bill_approver_jj"
+                        });
+                    }
                     let userObj = runtime.getCurrentUser();
                     let runtimeUser = userObj.id;
                     let transactionNumber = newRecord.getValue({
