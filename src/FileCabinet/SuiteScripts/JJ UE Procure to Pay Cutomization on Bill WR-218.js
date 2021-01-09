@@ -233,6 +233,10 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                 return dataSets.iterateSavedSearch(vendorbillSearchObj, dataSets.fetchSavedSearchColumn(vendorbillSearchObj, 'label'));
             },
 
+            /**
+             * saved search sued for finding the employees from employee group
+             * @returns {*[]|Object[]}
+             */
             employeeGroupSearch() {
                 var entitygroupSearchObj = search.create({
                     type: "entitygroup",
@@ -281,13 +285,13 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                     let submitReason = newRecord.getValue({
                         fieldId: "custbody_jj_reject_reason_wr_218"
                     })
-                    if (submitReason && checkForParameter(submitReason)) {
-                        let button = form.addButton({
-                            id: 'custpage_resubmit_button',
-                            functionName: 'resubmitButton',
-                            label: 'Resubmit For Approvals'
-                        });
-                    }
+                    // if (submitReason && checkForParameter(submitReason)) {
+                    //     let button = form.addButton({
+                    //         id: 'custpage_resubmit_button',
+                    //         functionName: 'resubmitButton',
+                    //         label: 'Resubmit For Approvals'
+                    //     });
+                    // }
                     //ADDING PROGRESS BAR FOR Loading
                     let progressBarField = form.addField({
                         id: 'custpage_progress_bar',
@@ -301,10 +305,10 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                     // var htmlCode = "<html><script>alert('sfs')</script></html>"
                     progressBarField.defaultValue = htmlCode;
 
-                    if(scriptContext.type == 'create' || scriptContext.type == 'edit') {
+                    if (scriptContext.type == 'create' || scriptContext.type == 'edit') {
                         let fcApproverEmployees = dataSets.employeeGroupSearch();
                         let employeeIdArray = [];
-                        for(let j = 0 ; j < fcApproverEmployees.length ; j++) {
+                        for (let j = 0; j < fcApproverEmployees.length; j++) {
                             employeeIdArray.push(fcApproverEmployees[j].InternalID.value);
                         }
                         newRecord.setValue({
@@ -350,9 +354,13 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                     let emailContentLines = [];
                     var totalLines = '';
                     let attachmentsArray = [];
+                    // let recipientId = newRecord.getValue({
+                    //     fieldId: "custbody_jj_approver_list_wr_218"
+                    // });
                     let recipientId = newRecord.getValue({
-                        fieldId: "custbody_jj_approver_list_wr_218"
+                        fieldId: "custbody_wr_237_fc_bill_approver_jj"
                     });
+                    log.debug("recipientId", recipientId);
                     let userObj = runtime.getCurrentUser();
                     let runtimeUser = userObj.id;
                     let transactionNumber = newRecord.getValue({

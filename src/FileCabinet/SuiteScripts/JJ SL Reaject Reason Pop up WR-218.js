@@ -21,9 +21,18 @@ define(['N/format', 'N/https', 'N/record', 'N/ui/serverWidget', 'N/redirect'],
         const onRequest = (scriptContext) => {
             if (scriptContext.request.method == 'GET') {
                 try {
+                    let tran_url = scriptContext.request.headers.referer
+                    let recordId = getParameterByName('id', tran_url);
                     let form = serverWidget.createForm({
                         title: "Reject Reason"
                     });
+                    let vendorbill_rec_val = form.addField({
+                        id: 'custpage_bill_id',
+                        type: serverWidget.FieldType.TEXT,
+                        label: 'TXT',
+                    })
+                    vendorbill_rec_val.updateDisplayType({displayType: serverWidget.FieldDisplayType.HIDDEN});
+                    vendorbill_rec_val.defaultValue = recordId;
                     let rejectField = form.addField({
                         id: 'custpage_reject_reason',
                         type: serverWidget.FieldType.LONGTEXT,
@@ -41,15 +50,15 @@ define(['N/format', 'N/https', 'N/record', 'N/ui/serverWidget', 'N/redirect'],
                 try {
                     let rejectReason = scriptContext.request.parameters.custpage_reject_reason;
                     log.debug("rejectReason", rejectReason);
-                    let queryString = scriptContext.request.parameters.entryformquerystring;
-                    let recordId = getParameterByName('recId', queryString);
+                    let  recordId = scriptContext.request.parameters.custpage_bill_id;
                     log.debug("recordId", recordId);
                     let idd = record.submitFields({
                         type: 'vendorbill',
                         id: recordId,
                         values: {
                             'custbody_jj_reject_reason_wr_218': rejectReason,
-                            'approvalstatus' : 3
+                            'approvalstatus': 3,
+                            'custbody_wr_237_fc_approved': false
                         }
                     });
                     log.debug("idd", idd);

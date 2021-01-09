@@ -210,7 +210,8 @@ define(['N/currentRecord', 'N/search', 'N/record'],
                             id: recordId,
                             values: {
                                 'custbody_jj_reject_reason_wr_218': '',
-                                'approvalstatus': 1
+                                'approvalstatus': 1,
+                                'custbody_wr_237_fc_approved': false
                             }
                         });
                         location.reload();
@@ -230,7 +231,8 @@ define(['N/currentRecord', 'N/search', 'N/record'],
                             id: recordId,
                             values: {
                                 'custbody_jj_reject_reason_wr_218': '',
-                                'approvalstatus': 1
+                                'approvalstatus': 1,
+                                'custbody_wr_237_fc_approved': false
                             }
                         });
                         var newUrl = oldUrl.split('&e=T')[0];
