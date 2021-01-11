@@ -24,25 +24,16 @@ define(['N/https', 'N/record', 'N/search', 'N/url', 'N/redirect', 'N/runtime'],
          */
         const onAction = (scriptContext) => {
             try {
-                let id = scriptContext.workflowId;
-                log.debug("id", id);
                 let newRecord = scriptContext.newRecord;
-                let scriptObj = runtime.getCurrentScript();
-                let runtimeUser = scriptObj.id;
-                log.debug("runtimeUser", runtimeUser);
-                let parameterUser = scriptObj.getParameter({
-                    name: 'custscript_jj_wr_237_is_fc_approver'
-                });
-                log.debug("parameterUser", parameterUser);
+                let userObj = runtime.getCurrentUser();
+                let runtimeUser = userObj.id;
                 let fcApprovers = newRecord.getValue({
                     fieldId: "custbody_wr_237_fc_bill_approver_jj"
                 });
-                log.debug("fcApprovers", fcApprovers);
-                log.debug("fcApprovers.indexOf(runtimeUser)", fcApprovers.indexOf(runtimeUser));
-                if(fcApprovers.indexOf(runtimeUser) != -1) {
-                    return 'T';
+                if(fcApprovers.includes(runtimeUser.toString())) {
+                    return 'True';
                 } else {
-                    return 'F';
+                    return 'False';
                 }
             } catch (err) {
                 log.error('ERROR', JSON.stringify(err));

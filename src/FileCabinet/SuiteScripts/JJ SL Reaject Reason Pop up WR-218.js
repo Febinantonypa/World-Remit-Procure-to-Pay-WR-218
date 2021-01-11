@@ -49,7 +49,6 @@ define(['N/format', 'N/https', 'N/record', 'N/ui/serverWidget', 'N/redirect'],
             } else {
                 try {
                     let rejectReason = scriptContext.request.parameters.custpage_reject_reason;
-                    log.debug("rejectReason", rejectReason);
                     let  recordId = scriptContext.request.parameters.custpage_bill_id;
                     log.debug("recordId", recordId);
                     let idd = record.submitFields({
@@ -61,7 +60,6 @@ define(['N/format', 'N/https', 'N/record', 'N/ui/serverWidget', 'N/redirect'],
                             'custbody_wr_237_fc_approved': false
                         }
                     });
-                    log.debug("idd", idd);
                     redirect.toRecord({
                         type: record.Type.VENDOR_BILL,
                         id: recordId,
