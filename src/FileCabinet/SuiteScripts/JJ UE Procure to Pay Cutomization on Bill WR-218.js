@@ -362,12 +362,12 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                     let recipientId;
                     if (fcApproved == true) {
                         log.debug("fcApproved true", fcApproved);
-                         recipientId = newRecord.getValue({
+                        recipientId = newRecord.getValue({
                             fieldId: "custbody_jj_approver_list_wr_218"
                         });
                     } else {
                         log.debug("fcApproved false", fcApproved);
-                         recipientId = newRecord.getValue({
+                        recipientId = newRecord.getValue({
                             fieldId: "custbody_wr_237_fc_bill_approver_jj"
                         });
                     }
@@ -519,7 +519,7 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                             email.send({
                                 author: runtimeUser,
                                 recipients: recipientId,
-                                subject: 'Vendor Bill Approval Reminder',
+                                subject: 'Vendor Bill Approval Notfication',
                                 body: special_content,
                                 relatedRecords: {
                                     transactionId: scriptContext.newRecord.id
@@ -533,7 +533,7 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                             email.send({
                                 author: runtimeUser,
                                 recipients: recipientId,
-                                subject: 'Vendor Bill Approval Reminder',
+                                subject: 'Vendor Bill Approval Notfication',
                                 body: special_content,
                                 attachments: attachmentsArray,
                                 relatedRecords: {

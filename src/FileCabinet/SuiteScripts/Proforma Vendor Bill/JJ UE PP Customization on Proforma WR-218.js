@@ -344,7 +344,7 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                             email.send({
                                 author: runtimeUser,
                                 recipients: poCreator,
-                                subject: 'Vendor Bill Approval Reminder',
+                                subject: 'Parked Vendor Bill Notification',
                                 body: emailContent,
                                 customRecord: {
                                     id: scriptContext.newRecord.id,
@@ -357,7 +357,7 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                             email.send({
                                 author: runtimeUser,
                                 recipients: poCreator,
-                                subject: 'Vendor Bill Approval Reminder',
+                                subject: 'Parked Vendor Bill Notification',
                                 body: emailContent,
                                 attachments: attachmentsArray,
                                 customRecord: {
@@ -401,7 +401,7 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                                 email.send({
                                     author: runtimeUser,
                                     recipients: poCreator,
-                                    subject: 'Vendor Bill Approval Reminder',
+                                    subject: 'Parked Vendor Bill Notification',
                                     body: emailContent,
                                     customRecord: {
                                         id: scriptContext.newRecord.id,
@@ -414,7 +414,7 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                                 email.send({
                                     author: runtimeUser,
                                     recipients: poCreator,
-                                    subject: 'Vendor Bill Approval Reminder',
+                                    subject: 'Parked Vendor Bill Notification',
                                     body: emailContent,
                                     attachments: attachmentsArray,
                                     customRecord: {
@@ -568,7 +568,8 @@ define(['N/email', 'N/format', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/r
                     totalLines = totalLines + linedata;
                 }
                 special_content = fileContents.replace("-enter-", totalLines);
-                special_content = special_content.replace("Vendor Bill", "Proforma Vendor Bill");
+                special_content = special_content.replace("Vendor Bill", "Parked Vendor Bill");
+                special_content = special_content.replace("Please use the below link to access the NetSuite to Approve/Reject it", "Please use the below link to access the Parked Vendor Bill in NetSuite");
 
                 return special_content;
             }
